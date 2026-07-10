@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <!--SelfContained>true</SelfContained-->
+        <!--PublishTrimmed>true</PublishTrimmed-->
+    </PropertyGroup>
+
+
+    <!-- Configurations -->
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <DebugSymbols>True</DebugSymbols>
+        <DebugType>Portable</DebugType>
+        <Optimize>False</Optimize>
+        <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+        <DefineConstants>$(DefineConstants);GK3;TRACE;DEBUG</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+        <Optimize>True</Optimize>
+        <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+        <DefineConstants>$(DefineConstants);GK3;TRACE;RELEASE</DefineConstants>
+    </PropertyGroup>
+
+
+    <!-- Platforms: AnyCPU, MSWin64, Linux, MacOS, FreeBSD, Android, iPhone, iPhoneSimulator -->
+    <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'MSWin64' ">
+        <PlatformTarget>x64</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_MSWIN</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'Linux' ">
+        <PlatformTarget>x64</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_LINUX;OS_LINUX_AMD64;MONO</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'Linux_ARM' ">
+        <PlatformTarget>arm64</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_LINUX;OS_LINUX_ARM64;MONO</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'MacOS' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_MACOS</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'FreeBSD' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_FREEBSD;MONO</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'Android' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_ANDROID;MOBILE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'iPhone' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_IOS;MOBILE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Platform)' == 'iPhoneSimulator' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DefineConstants>$(DefineConstants);OS_IOS;MOBILE</DefineConstants>
+    </PropertyGroup>
+
+
+    <!-- Available -->
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|MSWin64'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|MSWin64'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|Linux'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|Linux'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|Linux_ARM'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|Linux_ARM'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|MacOS'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|MacOS'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|FreeBSD'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|FreeBSD'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|Android'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|Android'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|iPhone'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|iPhone'" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator'" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator'" />
+
+</Project>
