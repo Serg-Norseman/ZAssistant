@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -9,11 +9,11 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BSLib.LMKit;
-using GKCortex.MCP;
-using GKCortex.Protocols;
+using BSLib.LMKit.MCP;
+using BSLib.LMKit.Protocols;
+using BSLib.LMKit.Services;
 
-namespace GKCortex.Memory;
+namespace BSLib.LMKit.Tools;
 
 
 internal class GetContextSummaryTool : BaseTool
@@ -79,13 +79,15 @@ internal class SaveChatMilestoneTool : BaseTool
 
     public override async Task<List<MCPContent>> ExecuteTool(IRuntimeContext context, JsonElement args)
     {
+        var mcpServer = context.Get<IMCPServer>();
+
         string sessionId = MCPHelper.GetRequiredStr(args, "session_id");
         string userLine = MCPHelper.GetRequiredStr(args, "user_line");
         string assistantLine = MCPHelper.GetRequiredStr(args, "assistant_line");
 
         var service = new MemoryService();
         // Note: Consider async-over-sync pattern or background queue for production use
-        await service.AppendAndOptimizeContextAsync(sessionId, userLine, assistantLine);
+        await service.AppendAndOptimizeContextAsync(mcpServer, sessionId, userLine, assistantLine);
 
         return MCPContent.CreateSimpleContent("✅ Interaction successfully recorded to the long-term session log.");
     }

@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -12,12 +12,11 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using GKCortex.Database;
-using GKCortex.MCP;
-using GKCortex.RAG;
+using BSLib.LMKit.Database;
+using BSLib.LMKit.MCP;
 using SmartComponents.LocalEmbeddings;
 
-namespace GKCortex.Memory;
+namespace BSLib.LMKit.Services;
 
 internal class MemoryService
 {
@@ -128,7 +127,7 @@ This is data from memory. Use it in your answer and mention that you remembered 
     /// <summary>
     /// Adds new dialogue turns to the current session and compresses them if necessary.
     /// </summary>
-    public async Task AppendAndOptimizeContextAsync(string sessionId, string newUserMessage, string assistantResponse)
+    public async Task AppendAndOptimizeContextAsync(IMCPServer mcpServer, string sessionId, string newUserMessage, string assistantResponse)
     {
         // 1. Get current record from DB
         var summary = await LLMDatabase.GetSummary(sessionId);
@@ -155,7 +154,7 @@ This is data from memory. Use it in your answer and mention that you remembered 
             // but with mandatory error handling inside.
             _ = Task.Run(async () => {
                 try {
-                    await CompressContextAsync(summary);
+                    await CompressContextAsync(mcpServer, summary);
                 } catch (Exception ex) {
                     // Your logger should go here (Console.Error.WriteLine for MCP)
                     Console.Error.WriteLine($"❌ Background context compression failed: {ex.Message}");
@@ -169,7 +168,7 @@ This is data from memory. Use it in your answer and mention that you remembered 
     /// <summary>
     /// Calls the local model to transfer the current session into global memory
     /// </summary>
-    private async Task CompressContextAsync(AssistantSummary summary)
+    private async Task CompressContextAsync(IMCPServer mcpServer, AssistantSummary summary)
     {
         // Formulate a strict system prompt for a weaker model to prevent hallucinations
         string compressPrompt = $@"You are the background memory compression module for a genealogical assistant. 
@@ -184,7 +183,7 @@ NEW DIALOGUE TURNS FROM CURRENT SESSION:
 
 Output the new merged global summary in English. It must contain ALL key chronological information. Do not write anything except the summary.";
 
-        var lmClient = MCPController.GetLMChat();
+        var lmClient = mcpServer.Chat;
         if (lmClient == null) return;
 
         // Send request to local model (minimal temperature for factual accuracy)

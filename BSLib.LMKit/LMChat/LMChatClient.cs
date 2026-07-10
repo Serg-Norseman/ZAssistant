@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -17,10 +17,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using GKCortex.MCP;
-using GKCortex.Protocols;
+using BSLib.LMKit.MCP;
+using BSLib.LMKit.Protocols;
 
-namespace GKCortex.LMChat;
+namespace BSLib.LMKit.LMChat;
 
 
 public interface ILMChatView
@@ -48,10 +48,15 @@ public class LMChatClient : ILMChat
     private readonly HttpClient fHttpClient;
     private int fRequestId;
     private string fSystemPrompt;
-    private readonly List<ToolDef> fTools;
+    private List<ToolDef> fTools;
     private readonly CancellationTokenSource fTokenSource;
 
     public LMHistoryStorage HistoryStorage { get; private set; }
+
+    public MCPServer MCPServer
+    {
+        get; private set;
+    }
 
     public LMSettings Settings { get; set; }
 
@@ -75,9 +80,6 @@ public class LMChatClient : ILMChat
 
         Settings = settings;
         HistoryStorage = new LMHistoryStorage();
-
-        var mcpTools = MCPController.GetTools();
-        fTools = mcpTools.Select(mT => new ToolDef(mT)).ToList();
 
         fTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 
@@ -131,6 +133,9 @@ public class LMChatClient : ILMChat
     /// </summary>
     private async Task ProcessToolCallsAsync(List<ToolCall> toolCalls)
     {
+        if (MCPServer == null)
+            return;
+
         fTokenSource.TryReset();
 
         // Create new message for tool results
@@ -148,7 +153,7 @@ public class LMChatClient : ILMChat
                 JsonElement args = JsonDocument.Parse(toolCall.Function.Arguments).RootElement;
 
                 // Execute tool via MCPController
-                var contents = await MCPController.ExecuteTool(funcName, args);
+                var contents = await MCPServer.ExecuteTool(funcName, args);
 
                 // Convert result to string
                 string resultText = string.Join("\n", contents.Select(c => c.Text ?? ""));
@@ -191,7 +196,14 @@ public class LMChatClient : ILMChat
         request.PresencePenalty = Settings.PresencePenalty;
         request.FrequencyPenalty = Settings.FrequencyPenalty;
         request.MaxTokens = Settings.MaxTokens;
-        request.Tools = fTools;
+
+        if (MCPServer != null) {
+            var mcpTools = MCPServer.MCPTools;
+            if (fTools == null || fTools.Count != mcpTools.Count) {
+                fTools = mcpTools.Select(mT => new ToolDef(mT)).ToList();
+            }
+            request.Tools = fTools;
+        }
 
         return request;
     }

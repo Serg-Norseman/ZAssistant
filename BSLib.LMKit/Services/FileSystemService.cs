@@ -1,5 +1,5 @@
 /*
- *  ZAssistant, the personal LLM Assistant.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
  *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ZAssistant;
+namespace BSLib.LMKit.Services;
 
 public class FileSystemService : IFileSystem
 {

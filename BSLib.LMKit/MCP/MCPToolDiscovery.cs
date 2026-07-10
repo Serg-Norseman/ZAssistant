@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -11,9 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using GKCortex.Protocols;
+using BSLib.LMKit.Protocols;
 
-namespace GKCortex.MCP;
+namespace BSLib.LMKit.MCP;
 
 
 public interface IQueryEqualizer
@@ -30,7 +30,7 @@ public static class MCPToolDiscovery
 {
     private record ToolMetadata(MCPTool Tool, string[] NameTags, string[] DescTags);
 
-    private struct SearchResult
+    private readonly struct SearchResult
     {
         public readonly MCPTool Tool;
         public readonly double Score;

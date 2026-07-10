@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -12,10 +12,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using BSLib.LMKit;
-using GKCortex.Protocols;
+using BSLib.LMKit.Protocols;
 
-namespace GKCortex.MCP;
+namespace BSLib.LMKit.MCP;
 
 
 internal class SearchTool : BaseTool
@@ -89,9 +88,11 @@ internal class UseTool : BaseTool
 
     public override async Task<List<MCPContent>> ExecuteTool(IRuntimeContext context, JsonElement args)
     {
+        var mcpServer = context.Get<IMCPServer>();
+
         string toolName = MCPHelper.GetRequiredStr(args, "tool_name");
         var arguments = MCPHelper.GetRequiredObj(args, "arguments");
 
-        return await MCPController.ExecuteTool(toolName, arguments);
+        return await mcpServer.ExecuteTool(toolName, arguments);
     }
 }

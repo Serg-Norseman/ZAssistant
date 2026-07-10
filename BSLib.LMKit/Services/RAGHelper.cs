@@ -1,6 +1,6 @@
 ﻿/*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -12,10 +12,10 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using GKCortex.Database;
+using BSLib.LMKit.Database;
 using SmartComponents.LocalEmbeddings;
 
-namespace GKCortex.RAG;
+namespace BSLib.LMKit.Services;
 
 
 internal class SearchResult<T> where T : IEntity

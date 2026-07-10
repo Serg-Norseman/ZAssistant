@@ -13,7 +13,7 @@
         <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
 
         <Configurations>Debug;Release</Configurations>
-        <Platforms>MSWin64;Linux;Linux_ARM;MacOS;FreeBSD</Platforms>
+        <Platforms>MSWin64;Linux;MacOS</Platforms>
     </PropertyGroup>
 
     <Import Project="..\GKConfigurations3.targets" />
@@ -26,7 +26,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
-        <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>

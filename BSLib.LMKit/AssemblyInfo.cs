@@ -8,4 +8,4 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyCulture("")]
 
-[assembly: InternalsVisibleTo("GKCortex.Tests")]
+[assembly: InternalsVisibleTo("BSLib.LMKit.Tests")]

@@ -159,8 +159,7 @@ namespace ZAssistant
 
             public void WriteNumError(int num, Exception ex)
             {
-                var err = ex as ReflectionTypeLoadException;
-                if (err != null) {
+                if (ex is ReflectionTypeLoadException err) {
                     foreach (var item in err.LoaderExceptions) {
                         WriteError(item.Message);
                     }

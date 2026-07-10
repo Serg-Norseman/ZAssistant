@@ -1,6 +1,6 @@
 /*
- *  GEDKeeper, the personal genealogical database editor.
- *  Copyright (C) 2009-2026 by Sergey V. Zhdanovskih.
+ *  BSLib.LMKit, the kit of tools for working with LLM, MCP and RAG.
+ *  Copyright (C) 2026 by Sergey V. Zhdanovskih.
  *
  *  Licensed under the GNU General Public License (GPL) v3.
  *  See LICENSE file in the project root for full license information.
@@ -15,27 +15,62 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using BSLib;
-using GKCortex.Protocols;
+using BSLib.LMKit.LMChat;
+using BSLib.LMKit.Protocols;
+using BSLib.LMKit.Services;
+using BSLib.LMKit.Tools;
 
-namespace GKCortex.MCP;
+namespace BSLib.LMKit.MCP;
+
+
+public interface IMCPServer
+{
+    ILMChat Chat { get; }
+
+    Task<List<MCPContent>> ExecuteTool(string toolName, JsonElement args);
+}
+
 
 /// <summary>
 /// Minimal MCP server that reads JSON-RPC 2.0 messages from stdin and writes responses to stdout.
 /// No external packages — only System.Text.Json from .NET 8.
 /// </summary>
-public class MCPServer
+public class MCPServer : IMCPServer
 {
     private readonly CancellationTokenSource fCancellationToken;
     private readonly JsonSerializerOptions fJsonOptions;
     private static ILogger fLogger;
-    private int fPId;
+    private readonly int fPId;
     private readonly MCPToolsListResult fToolsList;
     private readonly MCPResourcesListResult fResourcesList;
     private readonly MCPPromptsListResult fPromptsList;
 
+    private ILMChat fChat = null;
+    private IRuntimeContext fContext;
+    private readonly List<MCPTool> fMCPTools = new List<MCPTool>();
+    private readonly Dictionary<string, BaseResource> fResources = new Dictionary<string, BaseResource>();
+    private readonly Dictionary<string, BaseTool> fTools = new Dictionary<string, BaseTool>();
+    private bool fTDE = false;
+
+    public ILMChat Chat
+    {
+        get { return fChat; }
+        set { fChat = value; }
+    }
+
+    public IRuntimeContext Context
+    {
+        get { return fContext; }
+        set { fContext = value; }
+    }
+
     public bool KeepAliveTicks { get; set; }
     public bool RequestsLog { get; set; }
+
+    public List<MCPTool> MCPTools
+    {
+        get { return fMCPTools; }
+    }
 
     public MCPServer()
     {
@@ -60,14 +95,10 @@ public class MCPServer
         Log($"Initializing MCP server ({fPId})...");
 
         // The list is generated after registration.
-        fToolsList = new MCPToolsListResult() {
-            Tools = MCPController.GetTools()
-        };
+        fToolsList = new MCPToolsListResult();
 
         // Initialize resources
-        fResourcesList = new MCPResourcesListResult() {
-            Resources = MCPController.GetResources().Select(x => x.CreateResource()).ToList()
-        };
+        fResourcesList = new MCPResourcesListResult();
 
         // Initialize prompts (minimal stub)
         fPromptsList = new MCPPromptsListResult() {
@@ -82,6 +113,12 @@ public class MCPServer
         fJsonOptions.Converters.Add(
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
         );
+    }
+
+    private void UpdateQueryableLists()
+    {
+        fToolsList.Tools = fMCPTools;
+        fResourcesList.Resources = fResources.Values.Select(x => x.CreateResource()).ToList();
     }
 
     public static void SetLogger(ILogger logger)
@@ -161,7 +198,7 @@ public class MCPServer
 
     public static void Log(string message)
     {
-        string line = $"[GKCortex MCP] {message}";
+        string line = $"[BSLib.LMKit MCP] {message}";
         fLogger?.WriteInfo(line);
 
         //Console.Error.WriteLine(line);
@@ -264,7 +301,7 @@ public class MCPServer
                 Prompts = new MCPPromptsCapability { ListChanged = false }
             },
             ServerInfo = new MCPServerInfo {
-                Name = "GKCortex",
+                Name = "BSLib.LMKit",
                 Version = "1.0.0"
             }
         };
@@ -304,7 +341,7 @@ public class MCPServer
             p.TryGetProperty("arguments", out var arguments);
 
             // Execute an MCP tool call by name and arguments.
-            var content = await MCPController.ExecuteTool(toolName, arguments);
+            var content = await ExecuteTool(toolName, arguments);
 
             return new MCPResponse {
                 Id = request.Id,
@@ -368,7 +405,7 @@ public class MCPServer
             string uri = uriElem.GetString()!;
 
             // Match registered resources
-            var resContent = MCPController.GetResource(uri);
+            var resContent = GetResource(uri);
             if (resContent != null) {
                 fLogger?.WriteInfo($"Returned contents for resource {uri}");
 
@@ -435,6 +472,89 @@ public class MCPServer
                 Id = request.Id,
                 Error = MCPError.InternalError(ex.Message)
             };
+        }
+    }
+
+    public void InitFeatures(bool tdeMode, bool ragMode)
+    {
+        fTDE = tdeMode;
+
+        if (fContext.Get<IFileSystem>() != null) {
+            // Files operations
+            RegisterTool(new ReadFileTool());
+            RegisterTool(new WriteFileTool());
+            RegisterTool(new CreateDirectoryTool());
+            RegisterTool(new ListDirectoryTool());
+            RegisterTool(new MoveFileTool());
+            RegisterTool(new GrepSearchTool());
+            RegisterTool(new GetFileInfoTool());
+        }
+
+        if (tdeMode) {
+            RegisterTool(new SearchTool(), true);
+            RegisterTool(new UseTool(), true);
+        }
+
+        if (ragMode) {
+            RegisterTool(new RAGSearchExamplesTool(), true);
+            RegisterTool(new RAGWritePatternTool(), true);
+
+            RegisterTool(new StoreFactTool(), true);
+            RegisterTool(new SearchMemoryTool(), true);
+
+            RegisterTool(new GetContextSummaryTool(), true);
+            RegisterTool(new SaveChatMilestoneTool(), true);
+
+            RegisterTool(new GetKnowledgeSubgraphTool(), true);
+            RegisterTool(new AddKnowledgeNodeTool(), true);
+            RegisterTool(new ConnectKnowledgeNodesTool(), true);
+
+            /*RegisterTool(new CreateGenealogyTaskTool(), true);
+            RegisterTool(new UpdateTaskProgressTool(), true);
+            RegisterTool(new ChangeTaskStatusTool(), true);*/
+
+            RegisterTool(new GetUserProfileTool(), true);
+            RegisterTool(new UpdateUserProfileTool(), true);
+            RegisterTool(new RemoveUserPreferenceTool(), true);
+        }
+    }
+
+    public void RegisterTool(BaseTool tool, bool metaTool = false)
+    {
+        fTools.Add(tool.Sign, tool);
+
+        MCPTool mcpTool = tool.CreateTool();
+        if (mcpTool != null) {
+            if (fTDE && !metaTool) {
+                MCPToolDiscovery.Register(tool.Sign, mcpTool);
+            }
+
+            if (!fTDE || metaTool) {
+                fMCPTools.Add(mcpTool);
+            }
+        }
+    }
+
+    public async Task<List<MCPContent>> ExecuteTool(string toolName, JsonElement args)
+    {
+        if (fTools.TryGetValue(toolName, out BaseTool cmd)) {
+            return await cmd.ExecuteTool(fContext, args);
+        } else {
+            throw new ArgumentException($"Unknown tool: {toolName}");
+        }
+    }
+
+    public void RegisterResource(BaseResource resource)
+    {
+        fResources.Add(resource.Uri, resource);
+    }
+
+    public List<MCPResourceContents> GetResource(string uri)
+    {
+        if (fResources.TryGetValue(uri, out BaseResource res)) {
+            return res.Get(fContext);
+        } else {
+            return null;
         }
     }
 }
