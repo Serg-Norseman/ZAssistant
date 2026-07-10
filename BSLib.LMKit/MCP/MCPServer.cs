@@ -115,12 +115,6 @@ public class MCPServer : IMCPServer
         );
     }
 
-    private void UpdateQueryableLists()
-    {
-        fToolsList.Tools = fMCPTools;
-        fResourcesList.Resources = fResources.Values.Select(x => x.CreateResource()).ToList();
-    }
-
     public static void SetLogger(ILogger logger)
     {
         fLogger = logger;
@@ -314,8 +308,7 @@ public class MCPServer : IMCPServer
     /// </summary>
     private MCPResponse HandleToolsList(MCPRequest request)
     {
-        // Some clients (like Jan) re-request the list of tools very frequently,
-        // so it's better to have a cached list in advance.
+        fToolsList.Tools = fMCPTools;
         return new MCPResponse { Id = request.Id, Result = fToolsList };
     }
 
@@ -363,7 +356,7 @@ public class MCPServer : IMCPServer
     /// </summary>
     private MCPResponse HandleResourcesList(MCPRequest request)
     {
-        // Minimal stub: return empty list
+        fResourcesList.Resources = fResources.Values.Select(x => x.CreateResource()).ToList();
         return new MCPResponse { Id = request.Id, Result = fResourcesList };
     }
 
@@ -488,6 +481,12 @@ public class MCPServer : IMCPServer
             RegisterTool(new MoveFileTool());
             RegisterTool(new GrepSearchTool());
             RegisterTool(new GetFileInfoTool());
+
+            RegisterTool(new AppendToFileTool());
+            RegisterTool(new UpdateInFileTool());
+
+            // Agent operations
+            RegisterTool(new GetCurrentTimeTool());
         }
 
         if (tdeMode) {

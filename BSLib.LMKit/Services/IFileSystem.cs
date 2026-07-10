@@ -19,4 +19,8 @@ public interface IFileSystem
     void MoveFile(string source, string destination);
     string ReadFile(string path);
     void WriteFile(string path, string content);
+    void AppendToFile(string path, string content);
+    bool UpdateInFile(string path, string pattern, string replacement);
+
+    string GetCurrentTime();
 }

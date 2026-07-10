@@ -155,4 +155,36 @@ public class FileSystemService : IFileSystem
 
         return info;
     }
+
+    // 8. get_current_time
+    public string GetCurrentTime()
+    {
+        return DateTime.Now.ToString("o");
+    }
+
+    public void AppendToFile(string path, string content)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new ArgumentNullException(nameof(path));
+
+        string validPath = ValidateAndGetPath(path);
+        string contentToAppend = Environment.NewLine + content;
+        File.AppendAllText(validPath, contentToAppend);
+    }
+
+    public bool UpdateInFile(string path, string pattern, string replacement)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new ArgumentNullException(nameof(path));
+
+        if (string.IsNullOrEmpty(pattern))
+            throw new ArgumentNullException(nameof(pattern));
+
+        string validPath = ValidateAndGetPath(path);
+        string originalContent = File.ReadAllText(validPath);
+        Regex regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        string newContent = regex.Replace(originalContent, replacement);
+        File.WriteAllText(validPath, newContent);
+        return true;
+    }
 }

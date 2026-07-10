@@ -240,3 +240,105 @@ internal class GetFileInfoTool : BaseTool
         }
     }
 }
+
+internal class GetCurrentTimeTool : BaseTool
+{
+    public GetCurrentTimeTool() : base("get_current_time") { }
+
+    public override MCPTool CreateTool()
+    {
+        return new MCPTool {
+            Name = Sign,
+            Description = "Retrieve current local date/time.",
+            InputSchema = new MCPToolInputSchema {
+                Properties = new Dictionary<string, MCPToolProperty> {
+                },
+                Required = []
+            }
+        };
+    }
+
+    public override async Task<List<MCPContent>> ExecuteTool(IRuntimeContext context, JsonElement args)
+    {
+        try {
+            var result = context.Get<IFileSystem>().GetCurrentTime();
+
+            return await MCPContent.CreateSimpleContentAsync($"Current date/time: {result}");
+        } catch (System.Exception ex) {
+            return await MCPContent.CreateSimpleContentAsync($"Error getting file info: {ex.Message}");
+        }
+    }
+}
+
+
+internal class AppendToFileTool : BaseTool
+{
+    public AppendToFileTool() : base("append_to_file") { }
+
+    public override MCPTool CreateTool()
+    {
+        return new MCPTool {
+            Name = Sign,
+            Description = "Appends the provided content to the very end of an existing file.",
+            InputSchema = new MCPToolInputSchema {
+                Properties = new Dictionary<string, MCPToolProperty> {
+                    ["path"] = new MCPToolProperty { Type = "string", Description = "The path of the file to append to." },
+                    ["content"] = new MCPToolProperty { Type = "string", Description = "The text content to add (a line or block)." }
+                },
+                Required = ["path", "content"]
+            }
+        };
+    }
+
+    public override async Task<List<MCPContent>> ExecuteTool(IRuntimeContext context, JsonElement args)
+    {
+        string path = MCPHelper.GetRequiredStr(args, "path");
+        string content = MCPHelper.GetRequiredStr(args, "content");
+        try {
+            context.Get<IFileSystem>().AppendToFile(path, content);
+
+            return await MCPContent.CreateSimpleContentAsync($"Successfully appended data to: {path}");
+        } catch (System.Exception ex) {
+            return await MCPContent.CreateSimpleContentAsync($"Error appending to file '{path}': {ex.Message}");
+        }
+    }
+}
+
+
+internal class UpdateInFileTool : BaseTool
+{
+    public UpdateInFileTool() : base("update_in_file") { }
+    public override MCPTool CreateTool()
+    {
+        return new MCPTool {
+            Name = Sign,
+            Description = "Searches for a regex pattern in a file and replaces all occurrences with the provided replacement string.",
+            InputSchema = new MCPToolInputSchema {
+                Properties = new Dictionary<string, MCPToolProperty> {
+                    ["path"] = new MCPToolProperty { Type = "string", Description = "The path of the file to modify." },
+                    ["pattern"] = new MCPToolProperty { Type = "string", Description = "The regular expression pattern to search for (e.g., 'old_value')." },
+                    ["replacement"] = new MCPToolProperty { Type = "string", Description = "The string that will replace every match of the pattern." }
+                },
+                Required = ["path", "pattern", "replacement"]
+            }
+        };
+    }
+
+    public override async Task<List<MCPContent>> ExecuteTool(IRuntimeContext context, JsonElement args)
+    {
+        string path = MCPHelper.GetRequiredStr(args, "path");
+        string pattern = MCPHelper.GetRequiredStr(args, "pattern");
+        string replacement = MCPHelper.GetRequiredStr(args, "replacement");
+        try {
+            bool success = context.Get<IFileSystem>().UpdateInFile(path, pattern, replacement);
+
+            if (success) {
+                return await MCPContent.CreateSimpleContentAsync($"Successfully updated file '{path}'. Pattern matched and replaced.");
+            } else {
+                return await MCPContent.CreateSimpleContentAsync($"Update failed for file '{path}'. No matches found for pattern: {pattern}.");
+            }
+        } catch (System.Exception ex) {
+            return await MCPContent.CreateSimpleContentAsync($"Error updating file '{path}': {ex.Message}");
+        }
+    }
+}
