@@ -7,29 +7,20 @@
  */
 
 using System;
-using Eto.Forms;
-using ZAssistant.Forms;
-using ZAssistant.Utilities;
 using ZLMKit.MCP;
 
-namespace ZAssistant;
+namespace ZLMTools;
 
 internal class Program
 {
-    [STAThread]
     static void Main(string[] args)
     {
         try {
-            ZARuntimeContext.Initialize();
-
+            RuntimeContext.Initialize();
             var server = new MCPServer();
-
-            var zaContext = new ZARuntimeContext(server);
-            server.Context = zaContext;
+            server.Context = new RuntimeContext(server);
             server.InitFeatures(false, false);
-
-            var application = new Application();
-            application.Run(new LMChatForm(zaContext));
+            server.Run();
         } catch (Exception ex) {
             MCPServer.Log($"Fatal error during initialization: {ex}");
             Environment.Exit(1);

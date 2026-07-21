@@ -1,8 +1,9 @@
-﻿using System.Reflection;
+﻿
+using System.Reflection;
 
 [assembly: AssemblyTitle("ZAssistant")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyProduct("ZAssistant")]
-[assembly: AssemblyCopyright("Copyright (C) 2026 by Sergey V. Zhdanovskih")]
-[assembly: AssemblyVersion("0.1.0.0")]
+[assembly: AssemblyCopyright("Copyright © 2026 by Sergey V. Zhdanovskih")]
+[assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyCulture("")]

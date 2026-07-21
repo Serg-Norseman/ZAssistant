@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>ZLMKit.Tests</AssemblyName>
+        <RootNamespace>ZLMKit.Tests</RootNamespace>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <Configurations>Debug;Release</Configurations>
+    </PropertyGroup>
+
+    <Import Project="..\GKConfigurations3.targets" />
+
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.2" />
+        <PackageReference Include="NSubstitute" Version="5.0.0" />
+        <PackageReference Include="NUnit" Version="3.13.3" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+        <PackageReference Include="SmartComponents.LocalEmbeddings" Version="0.1.0-preview10148" PrivateAssets="All" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <ProjectReference Include="..\ZLMKit\ZLMKit.csproj" />
+    </ItemGroup>
+
+</Project>
