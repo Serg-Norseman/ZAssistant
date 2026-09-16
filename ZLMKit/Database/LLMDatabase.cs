@@ -41,7 +41,7 @@ public static class LLMDatabase
                 [session_id] TEXT NOT NULL PRIMARY KEY,
                 [global_summary] TEXT,
                 [session_summary] TEXT,
-                [last_updated] TEXT
+                [updated_at] TEXT
             )",
 
             @"CREATE TABLE IF NOT EXISTS [assistant_tasks] (
@@ -86,7 +86,7 @@ public static class LLMDatabase
                 [pref_key] TEXT NOT NULL PRIMARY KEY,
                 [pref_value] TEXT,
                 [confidence_score] REAL,
-                [last_updated] TEXT
+                [updated_at] TEXT
             )",
 
             // Add FTS support for memory_observations table
@@ -162,12 +162,12 @@ public static class LLMDatabase
                 PrefKey = "DBVer",
                 PrefValue = version.ToString(),
                 ConfidenceScore = 1.0,
-                LastUpdated = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow
             };
             conn.Insert(versionRecord);
         } else {
             versionRecord.PrefValue = version.ToString();
-            versionRecord.LastUpdated = DateTime.UtcNow;
+            versionRecord.UpdatedAt = DateTime.UtcNow;
             conn.Update(versionRecord);
         }
     }

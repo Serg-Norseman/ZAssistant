@@ -23,6 +23,6 @@ public class UserPreference
     [Column("confidence_score")]
     public double ConfidenceScore { get; set; } = 1.0;
 
-    [Column("last_updated")]
-    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    [Column("updated_at")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

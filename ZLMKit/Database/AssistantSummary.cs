@@ -23,6 +23,6 @@ public class AssistantSummary
     [Column("session_summary")]
     public string SessionSummary { get; set; } = string.Empty;
 
-    [Column("last_updated")]
-    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    [Column("updated_at")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

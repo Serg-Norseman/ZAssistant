@@ -7,13 +7,16 @@
  */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using BSLib;
 using ZLMKit.LMChat;
@@ -52,6 +55,10 @@ public class MCPServer : IMCPServer
     private readonly Dictionary<string, BaseResource> fResources = new Dictionary<string, BaseResource>();
     private readonly Dictionary<string, BaseTool> fTools = new Dictionary<string, BaseTool>();
     private bool fTDE = false;
+    private bool fIsRunning;
+    private bool fIsVerboseLogging;
+
+    public bool IsRunning { get { return fIsRunning; } }
 
     public ILMChat Chat
     {
@@ -244,7 +251,7 @@ public class MCPServer : IMCPServer
         await SendResponse(response);
     }
 
-    public async Task<string> ProcessSSERequestAsync(string line)
+    public string ProcessSSERequest(string line)
     {
         if (string.IsNullOrEmpty(line)) return string.Empty;
 
@@ -572,4 +579,151 @@ public class MCPServer : IMCPServer
             return null;
         }
     }
+
+    #region Streamable Http
+
+    // Channel storage for sending messages to an SSE stream
+    private readonly ConcurrentDictionary<string, Channel<string>> fActiveSessions = new();
+    private HttpListener fListener;
+
+    public async Task StartAsync(string host, int port, bool enableCors, string allowedHosts, bool verboseLogging)
+    {
+        fIsVerboseLogging = verboseLogging;
+
+        string listenHost = host == "localhost" ? "127.0.0.1" : host;
+        fListener = new HttpListener();
+        fListener.Prefixes.Add($"http://{listenHost}:{port}/mcp/");
+        fListener.Start();
+
+        fIsRunning = true;
+        Log($"MCP server is running on http://{listenHost}:{port}/mcp/");
+
+        _ = Task.Run(async () => {
+            while (fIsRunning && fListener.IsListening) {
+                try {
+                    var context = await fListener.GetContextAsync();
+                    _ = Task.Run(() => HandleIncomingRequestAsync(context, enableCors, allowedHosts));
+                } catch (HttpListenerException) when (!fIsRunning) {
+                    // Standard server shutdown; ignoring the exception
+                } catch (Exception ex) {
+                    Log($"❌ Error in the listening loop: {ex.Message}");
+                }
+            }
+        });
+    }
+
+    private async Task HandleIncomingRequestAsync(HttpListenerContext context, bool enableCors, string allowedHosts)
+    {
+        var request = context.Request;
+        var response = context.Response;
+
+        if (enableCors) {
+            string? origin = request.Headers["Origin"];
+            if (!string.IsNullOrEmpty(origin) && allowedHosts.Contains(origin)) {
+                response.Headers.Add("Access-Control-Allow-Origin", origin);
+            } else if (string.IsNullOrEmpty(allowedHosts) || allowedHosts == "*") {
+                response.Headers.Add("Access-Control-Allow-Origin", "*");
+            }
+            response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+            // If it is a preflight request from the browser or LM Studio/Jan, respond with OK immediately.
+            if (request.HttpMethod == "OPTIONS") {
+                response.StatusCode = (int)HttpStatusCode.OK;
+                response.Close();
+                return;
+            }
+        }
+
+        string sessionId = request.QueryString["sessionId"];
+        try {
+            // --- GET Processing (SSE Stream) ---
+            if (request.HttpMethod == "GET") {
+                sessionId ??= Guid.NewGuid().ToString("N");
+
+                response.ContentType = "text/event-stream";
+                response.Headers.Add("Cache-Control", "no-cache");
+                response.Headers.Add("Connection", "keep-alive");
+
+                var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions {
+                    SingleWriter = true,
+                    SingleReader = true
+                });
+                fActiveSessions[sessionId] = channel;
+
+                using var writer = new StreamWriter(response.OutputStream, new UTF8Encoding(false));
+
+                try {
+                    // Instantly send the client their endpoint in SSE format
+                    await writer.WriteAsync($"event: endpoint\ndata: /mcp/?sessionId={sessionId}\n\n");
+                    await writer.FlushAsync();
+
+                    // Read messages from the channel and write to the network stream
+                    await foreach (var message in channel.Reader.ReadAllAsync()) {
+                        if (!fIsRunning) break;
+                        await writer.WriteAsync(message);
+                        await writer.FlushAsync();
+                    }
+                } catch (Exception ex) {
+                    if (fIsVerboseLogging) Log($"ℹ️ The client disconnected or an SSE error occurred: {ex.Message}");
+                } finally {
+                    fActiveSessions.TryRemove(sessionId, out _);
+                    channel.Writer.TryComplete();
+                    response.Close();
+                }
+            }
+            // --- POST Processing (JSON-RPC commands) ---
+            else if (request.HttpMethod == "POST") {
+                using var reader = new StreamReader(request.InputStream, Encoding.UTF8);
+                string jsonRpcRequest = await reader.ReadToEndAsync();
+
+                if (fIsVerboseLogging) {
+                    Log($"POST received: {jsonRpcRequest[..Math.Min(150, jsonRpcRequest.Length)]}...");
+                }
+
+                string jsonRpcResponse = ProcessSSERequest(jsonRpcRequest);
+                bool isNotification = !jsonRpcRequest.Contains("\"id\"");
+
+                if (!string.IsNullOrEmpty(jsonRpcResponse)) {
+                    string formatted = $"data: {jsonRpcResponse.Replace("\r", "").Replace("\n", "")}\n\n";
+
+                    if (!string.IsNullOrEmpty(sessionId) && fActiveSessions.TryGetValue(sessionId, out var channel)) {
+                        await channel.Writer.WriteAsync(formatted);
+                    } else if (!isNotification) {
+                        Log($"⚠️ Response generated, but no active SSE session found for sessionId={sessionId}");
+                    }
+                    response.StatusCode = (int)HttpStatusCode.Accepted; // 202 Accepted
+                } else {
+                    response.StatusCode = (int)HttpStatusCode.NoContent; // 204 No Content
+                }
+                response.Close();
+            } else {
+                response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+                response.Close();
+            }
+        } catch (Exception ex) {
+            Log($"❌ Error processing MCP request: {ex.Message}");
+            response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            response.Close();
+        }
+    }
+
+    public async Task StopAsync()
+    {
+        fIsRunning = false;
+        if (fListener != null && fListener.IsListening) {
+            Log("Stopping the MCP server...");
+
+            foreach (var session in fActiveSessions.Values) {
+                session.Writer.TryComplete();
+            }
+            fActiveSessions.Clear();
+
+            fListener.Stop();
+            fListener.Close();
+        }
+        await Task.CompletedTask;
+    }
+
+    #endregion
 }

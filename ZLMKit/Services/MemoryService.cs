@@ -182,7 +182,7 @@ internal class MemoryService
                 SessionId = sessionId,
                 GlobalSummary = "Start of new genealogical research.",
                 SessionSummary = $"User: {newUserMessage}\nAssistant: {assistantResponse}\n",
-                LastUpdated = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow
             };
             LLMDatabase.InsertSummary(summary);
             return;
@@ -190,7 +190,7 @@ internal class MemoryService
 
         // 2. Append new turns to current context
         summary.SessionSummary += $"User: {newUserMessage}\nAssistant: {assistantResponse}\n";
-        summary.LastUpdated = DateTime.UtcNow;
+        summary.UpdatedAt = DateTime.UtcNow;
 
         // 3. Check if context compression is needed (length-based estimate for simplicity in offline solutions)
         if (summary.SessionSummary.Length > _tokenThresholdChars) {
@@ -239,7 +239,7 @@ Output the new merged global summary in English. It must contain ALL key chronol
             // Clear current session (or keep last 2 lines), and consolidate global memory.
             summary.GlobalSummary = newGlobalSummary;
             summary.SessionSummary = "Context cleared after archival. Dialogue continues from this point.\n";
-            summary.LastUpdated = DateTime.UtcNow;
+            summary.UpdatedAt = DateTime.UtcNow;
 
             LLMDatabase.UpdateSummary(summary);
         }
@@ -264,14 +264,14 @@ Output the new merged global summary in English. It must contain ALL key chronol
             // If value is the same, just update date and confidence if it's higher
             existingPref.PrefValue = value.Trim();
             existingPref.ConfidenceScore = Math.Max(existingPref.ConfidenceScore, confidenceScore);
-            existingPref.LastUpdated = DateTime.UtcNow;
+            existingPref.UpdatedAt = DateTime.UtcNow;
             LLMDatabase.UpdatePreference(existingPref);
         } else {
             var newPref = new UserPreference {
                 PrefKey = normalizedKey,
                 PrefValue = value.Trim(),
                 ConfidenceScore = confidenceScore,
-                LastUpdated = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow
             };
             LLMDatabase.InsertPreference(newPref);
         }

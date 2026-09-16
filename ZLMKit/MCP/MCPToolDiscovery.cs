@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using ZLMKit.Protocols;
+using ZLMKit.Utilities;
 
 namespace ZLMKit.MCP;
 
@@ -46,10 +47,6 @@ public static class MCPToolDiscovery
         }
     }
 
-    // Cache for search results
-    private const int CacheSizeLimit = 100; // Limit cache size to prevent memory issues
-    private static readonly WeightedCache<string, IEnumerable<MCPTool>> fSearchCache = new WeightedCache<string, IEnumerable<MCPTool>>(CacheSizeLimit);
-
     // Weights for different parts of metadata
     private const double ExactNameWeight = 2.0; // High weight for exact name matches
     private const double NameWeight = 1.0;
@@ -79,10 +76,6 @@ public static class MCPToolDiscovery
 
     public static IEnumerable<MCPTool> Search(string query, int limit = 5)
     {
-        var cacheKey = $"{query}:{limit}";
-        var cachedResult = fSearchCache.Get(cacheKey);
-        if (cachedResult != null) return cachedResult;
-
         var queryTokens = PrepareTokens(query);
         if (queryTokens.Length == 0)
             return new List<MCPTool>();
@@ -100,14 +93,7 @@ public static class MCPToolDiscovery
             .Select(r => r.Tool)
             .ToList();
 
-        fSearchCache.Add(cacheKey, result);
-
         return result;
-    }
-
-    public static void ClearCache()
-    {
-        fSearchCache.Clear();
     }
 
     private static double CalculateScore(string[] queryTokens, ToolMetadata tool)
@@ -146,41 +132,10 @@ public static class MCPToolDiscovery
             foreach (var t in targetTokens) {
                 if (t == q) matches += 1.0; // A complete match
                 else if (t.Contains(q) || q.Contains(t)) matches += 0.5; // Partial
-                else if (Levenshtein(q, t) <= 1) matches += 0.3; // Typo
+                else if (SysUtils.Levenshtein(q, t) <= 1) matches += 0.3; // Typo
             }
         }
         return matches / targetTokens.Length;
-    }
-
-    /// <summary>
-    /// Computes the Levenshtein edit distance between two strings.
-    /// Uses an optimized single-row algorithm with O(min(m,n)) memory.
-    /// </summary>
-    public static int Levenshtein(string a, string b)
-    {
-        if (string.IsNullOrEmpty(a)) return b?.Length ?? 0;
-        if (string.IsNullOrEmpty(b)) return a.Length;
-
-        // Ensure b is the shorter string for optimal memory usage
-        if (a.Length < b.Length)
-            (a, b) = (b, a);
-
-        var costs = new int[b.Length + 1];
-        for (int i = 0; i <= b.Length; i++) costs[i] = i;
-
-        for (int i = 1; i <= a.Length; i++) {
-            int prev = costs[0];
-            costs[0] = i;
-            for (int j = 1; j <= b.Length; j++) {
-                int current = costs[j];
-                costs[j] = Math.Min(
-                    Math.Min(costs[j - 1] + 1, costs[j] + 1),
-                    prev + (a[i - 1] == b[j - 1] ? 0 : 1));
-                prev = current;
-            }
-        }
-
-        return costs[b.Length];
     }
 
     #region Stemmer

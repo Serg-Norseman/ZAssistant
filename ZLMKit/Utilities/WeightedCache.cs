@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace ZLMKit.MCP;
+namespace ZLMKit.Utilities;
 
 public class WeightedCache<TKey, TValue> : IDisposable where TKey : notnull
 {
