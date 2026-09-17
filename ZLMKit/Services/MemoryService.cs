@@ -441,14 +441,14 @@ Output the new merged global summary in English. It must contain ALL key chronol
             return examples;
         } else {
             // Perform hybrid search with FTS and embeddings using RRF
-            return SearchEntitiesHybrid(context, query, topK);
+            return SearchEntitiesHybrid(query, topK);
         }
     }
 
     /// <summary>
     /// Combines vector and keyword signals via Reciprocal Rank Fusion (RRF).
     /// </summary>
-    private static string SearchEntitiesHybrid(IRuntimeContext context, string query, int topK = 10)
+    private static string SearchEntitiesHybrid(string query, int topK = 10)
     {
         // standard RRF constant
         const double k = 60.0;

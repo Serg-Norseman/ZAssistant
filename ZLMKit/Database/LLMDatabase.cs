@@ -175,8 +175,8 @@ public static class LLMDatabase
     // Execute migrations for specified version
     private static void ExecuteMigration(SQLiteConnection conn, int version)
     {
-        if (MigrationSQL.ContainsKey(version)) {
-            foreach (string sql in MigrationSQL[version]) {
+        if (MigrationSQL.TryGetValue(version, out string[] value)) {
+            foreach (string sql in value) {
                 conn.Execute(sql);
             }
         }

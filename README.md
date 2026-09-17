@@ -9,3 +9,7 @@ An experimental project to explore the topic of AI assistant tools.
 * ZLMKit.Tests - tests.
 * ZLMTools - stdio-based MCP server for connecting to an LM client; for standalone use or debugging.
 * ZAssistant - not a very useful project for studying LM clients.
+
+## MCP Tools
+
+[ZLMKit MCP Tools Description](.\MCP_TOOLS.md)
