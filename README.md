@@ -12,4 +12,4 @@ An experimental project to explore the topic of AI assistant tools.
 
 ## MCP Tools
 
-[ZLMKit MCP Tools Description](.\MCP_TOOLS.md)
+[ZLMKit MCP Tools Description](/MCP_TOOLS.md)

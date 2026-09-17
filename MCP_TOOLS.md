@@ -1,6 +1,6 @@
 # ZLMKit MCP Tools Description
 
-This document provides a comprehensive overview of all MCP (Machine Control Protocol) tools available in the ZLMKit library. These tools are designed to extend the capabilities of AI assistants by providing access to various system functions, file operations, memory management, and task coordination. This documentation is intended for AI systems that need to understand and utilize these tools effectively.
+This document provides a comprehensive overview of all MCP tools available in the ZLMKit library. These tools are designed to extend the capabilities of AI assistants by providing access to various system functions, file operations, memory management, and task coordination. This documentation is intended for AI systems that need to understand and utilize these tools effectively.
 
 ## Knowledge Graph Memory Concept
 
