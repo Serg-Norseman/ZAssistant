@@ -40,10 +40,12 @@ internal class ReadTextFileTool : FileTool
     {
         return new MCPTool {
             Name = Sign,
-            Description = "Read the complete contents of a text file from the file system. Returns the file contents as a string (UTF-8).",
+            Description = "Read the complete contents of a text file from the file system, or read a portion of it using offset and limit parameters. Returns the file contents as a string (UTF-8).",
             InputSchema = new MCPToolInputSchema {
                 Properties = new Dictionary<string, MCPToolProperty> {
-                    ["path"] = new MCPToolProperty { Type = "string", Description = "The path of the text file to read" }
+                    ["path"] = new MCPToolProperty { Type = "string", Description = "The path of the text file to read" },
+                    ["offset"] = new MCPToolProperty { Type = "integer", Description = "Optional: The line number to start reading from (0-based). Requires 'limit' to be set." },
+                    ["limit"] = new MCPToolProperty { Type = "integer", Description = "Optional: Maximum number of lines to read. Use with 'offset' to paginate through large files." }
                 },
                 Required = ["path"]
             }
@@ -53,12 +55,19 @@ internal class ReadTextFileTool : FileTool
     public override List<MCPContent> ExecuteTool(IRuntimeContext context, JsonElement args)
     {
         string path = MCPHelper.GetRequiredStr(args, "path");
+        int offset = MCPHelper.GetOptionalInt(args, "offset", -1);
+        int limit = MCPHelper.GetOptionalInt(args, "limit", -1);
 
         var fileSystem = context.Get<IFileSystem>();
 
         try {
-            string content = fileSystem.ReadFile(path);
-            return MCPContent.CreateSimpleContent(content);
+            if (offset >= 0 && limit > 0) {
+                string content = fileSystem.ReadFile(path, offset, limit);
+                return MCPContent.CreateSimpleContent(content);
+            } else {
+                string content = fileSystem.ReadFile(path);
+                return MCPContent.CreateSimpleContent(content);
+            }
         } catch (Exception ex) {
             return MCPContent.CreateSimpleContent($"❌ Error reading text file: {ex.Message}");
         }

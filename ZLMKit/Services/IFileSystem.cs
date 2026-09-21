@@ -19,6 +19,7 @@ public interface IFileSystem
     List<string> ListDirectory(string path);
     void MoveFile(string source, string destination);
     string ReadFile(string path);
+    string ReadFile(string path, int offset, int limit);
     Stream ReadStream(string path);
     void WriteFile(string path, string content);
     void AppendToFile(string path, string content);

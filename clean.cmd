@@ -7,7 +7,7 @@ del .\pub\* /s /q
 for /d %%p in (.\pub\*) do rd "%%p" /s /q
 
 for /f "tokens=*" %%G in ('dir /b /ad /s .vs') do rmdir /s /q "%%G"
-rmdir .\.vs
+rmdir .\.vs /s /q
 
 rem <<< Main assemblies cleaning >>>
 

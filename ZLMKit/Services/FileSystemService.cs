@@ -53,6 +53,26 @@ public class FileSystemService : IFileSystem
         return File.ReadAllText(validPath, Encoding.UTF8);
     }
 
+    public string ReadFile(string path, int offset, int limit)
+    {
+        string validPath = ValidateAndGetPath(path);
+        string[] lines = File.ReadAllLines(validPath, Encoding.UTF8);
+
+        if (offset < 0 || offset >= lines.Length) {
+            throw new ArgumentOutOfRangeException(nameof(offset), $"Offset {offset} is out of range. File has {lines.Length} lines.");
+        }
+
+        if (limit <= 0) {
+            throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be greater than 0.");
+        }
+
+        int endIndex = Math.Min(offset + limit, lines.Length);
+        string[] selectedLines = new string[endIndex - offset];
+        Array.Copy(lines, offset, selectedLines, 0, selectedLines.Length);
+
+        return string.Join(Environment.NewLine, selectedLines);
+    }
+
     public Stream ReadStream(string path)
     {
         string validPath = ValidateAndGetPath(path);

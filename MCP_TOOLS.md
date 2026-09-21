@@ -61,10 +61,12 @@ Observations are discrete pieces of information about an entity. They are:
 ## File System Tools
 
 ### read_text_file
-- **Description**: Read the complete contents of a text file from the file system. Returns the file contents as a string (UTF-8).
-- **Parameters**: 
+- **Description**: Read the complete contents of a text file from the file system, or read a portion of it using offset and limit parameters. Returns the file contents as a string (UTF-8).
+- **Parameters**:
   - `path` (string): The path of the text file to read.
-- **Returns**: Contents of the specified text file.
+  - `offset` (integer, optional): The line number to start reading from (0-based). Requires 'limit' to be set.
+  - `limit` (integer, optional): Maximum number of lines to read. Use with 'offset' to paginate through large files.
+- **Returns**: Contents of the specified text file or file portion.
 
 ### read_image_file
 - **Description**: Read an image file from the file system. Returns base64 encoding of the binary contents of a file.
